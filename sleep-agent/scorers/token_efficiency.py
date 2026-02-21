@@ -1,11 +1,19 @@
 """TokenEfficiency scorer for Braintrust online scoring.
 
-Push with: braintrust push sleep-agent/scorers/token_efficiency.py
+Push with: cd scorers && braintrust push token_efficiency.py
 """
-from braintrust import Score
+import braintrust
+from pydantic import BaseModel
+from typing import Optional
+
+project = braintrust.projects.create(name="self-healing-sleep")
 
 
-def TokenEfficiency(output, metadata=None, metrics=None, **kwargs) -> Score:
+class TokenEfficiencyParams(BaseModel):
+    metrics: Optional[dict] = None
+
+
+def token_efficiency_handler(metrics: Optional[dict] = None):
     """Score a trace based on total token usage.
 
     Sessions under 50k tokens score 1.0, decreasing linearly above.
@@ -15,11 +23,16 @@ def TokenEfficiency(output, metadata=None, metrics=None, **kwargs) -> Score:
         total_tokens = metrics.get("tokens", 0)
 
     if total_tokens <= 0:
-        return Score(name="TokenEfficiency", score=1.0, metadata={"total_tokens": 0, "note": "no token data"})
+        return {"score": 1.0, "metadata": {"total_tokens": 0, "note": "no token data"}}
 
     score = min(1.0, 50000 / total_tokens)
-    return Score(
-        name="TokenEfficiency",
-        score=round(score, 4),
-        metadata={"total_tokens": total_tokens}
-    )
+    return {"score": round(score, 4), "metadata": {"total_tokens": total_tokens}}
+
+
+project.scorers.create(
+    name="TokenEfficiency",
+    slug="token-efficiency",
+    description="Score traces by token efficiency. Under 50k tokens = 1.0, linear decrease above.",
+    parameters=TokenEfficiencyParams,
+    handler=token_efficiency_handler,
+)
