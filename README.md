@@ -33,6 +33,35 @@ Each stage maps to real sleep neuroscience:
 | N3 | Deep sleep — glymphatic waste clearance, tissue repair | Health-check hooks, fix broken references, clean orphaned temp files |
 | REM | Dreaming — creative recombination, memory integration | Two-signal activation: create new hooks/skills/memory from confirmed patterns |
 
+## Voice-Driven Sleep Report Dashboard
+
+The demo frontend — a Gemini Live voice agent narrates the sleep cycle findings while improvement cards appear one-by-one. The presenter approves or dismisses each improvement by voice or button.
+
+![Dashboard landing state — summary stats and pending analysis placeholders](docs/screenshots/dashboard-landing.png)
+
+![Cards revealed — each improvement shows type, confidence, story, and impact](docs/screenshots/dashboard-cards-revealed.png)
+
+![Full report — all improvements reviewed, maintenance actions, token reduction headline](docs/screenshots/dashboard-all-revealed.png)
+
+### How the dashboard works
+
+1. Connects to Gemini Live (BidiGenerateContent WebSocket) with a system instruction containing the sleep report
+2. Gemini narrates the report conversationally and calls tools to control the UI:
+   - `show_next_finding` — reveals the next improvement card
+   - `approve_improvement(id)` — marks an improvement as approved
+   - `dismiss_improvement(id)` — dismisses an improvement
+3. Manual buttons provide fallback if the voice model doesn't call the tool
+4. After all improvements are reviewed, maintenance actions and the token reduction headline appear
+
+### Running the dashboard
+
+```bash
+cd demo/gemini-live-demo
+cp .env.example .env.local  # Add your Gemini API key
+npm install
+npm run dev
+```
+
 ## Project Structure
 
 ```
@@ -62,7 +91,18 @@ sleep-agent/
 demo/
 ├── seed-entropy.sh             # Pre-populate .claude/ with demo entropy
 ├── demo-task.md                # Before/after comparison task
-└── run-demo.sh                 # Full demo flow
+├── run-demo.sh                 # Full demo flow
+└── gemini-live-demo/           # Voice-driven sleep report frontend
+    ├── src/
+    │   ├── components/
+    │   │   ├── SleepDashboard.tsx   # Main dashboard page
+    │   │   ├── ImprovementCard.tsx  # Improvement card with approve/dismiss
+    │   │   └── GeminiLive.tsx       # Standalone voice demo (original)
+    │   ├── data/
+    │   │   └── sleep-report.ts      # Report data, system instruction, tool defs
+    │   └── services/
+    │       └── live-client.ts       # WebSocket client with tool calling
+    └── package.json
 
 research/                       # 15,000+ lines across 22 files
 docs/                           # Principles, metaphors, toolkit
@@ -129,4 +169,4 @@ This project is grounded in 300+ sources across neuroscience, immunology, ecolog
 - **Ant colony stigmergy** → environmental traces as coordination mechanism
 - **Alan Kay's cathedral architecture** → simple components, powerful arrangement
 
-See [`research/SYNTHESIS.md`](research/SYNTHESIS.md) for the full synthesis of all 22 research files.
+See [`SYNTHESIS.md`](SYNTHESIS.md) for the full synthesis of all 22 research files.
