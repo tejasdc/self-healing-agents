@@ -1,0 +1,52 @@
+{
+  "type": "object",
+  "properties": {
+    "signals_evaluated": { "type": "integer" },
+    "artifacts_created": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "artifact_id": { "type": "string" },
+          "type": { "type": "string", "enum": ["hook", "skill", "memory", "rule", "claude_md_section"] },
+          "name": { "type": "string" },
+          "file_path": { "type": "string" },
+          "confidence": { "type": "number" },
+          "pattern_sources": { "type": "array", "items": { "type": "string" } },
+          "description": { "type": "string" }
+        },
+        "required": ["artifact_id", "type", "name", "file_path", "confidence"]
+      }
+    },
+    "signals_promoted": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "signal_id": { "type": "string" },
+          "description": { "type": "string" },
+          "first_seen_cycle": { "type": "string" },
+          "confirmed_cycle": { "type": "string" },
+          "artifact_created": { "type": "string" }
+        },
+        "required": ["signal_id", "description"]
+      }
+    },
+    "signals_deferred": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "signal_id": { "type": "string" },
+          "description": { "type": "string" },
+          "source": { "type": "string" },
+          "first_seen_cycle": { "type": "string" }
+        },
+        "required": ["signal_id", "description", "source"]
+      }
+    },
+    "pending_signals_updated": { "type": "boolean" },
+    "artifact_registry_updated": { "type": "boolean" }
+  },
+  "required": ["signals_evaluated", "artifacts_created", "signals_promoted", "signals_deferred"]
+}

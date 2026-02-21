@@ -1,0 +1,63 @@
+{
+  "type": "object",
+  "properties": {
+    "artifacts_evaluated": { "type": "integer" },
+    "artifacts_pruned": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "artifact_id": { "type": "string" },
+          "name": { "type": "string" },
+          "reason": { "type": "string" },
+          "previous_relevance": { "type": "number" },
+          "new_relevance": { "type": "number" },
+          "action": { "type": "string", "enum": ["deleted", "archived", "consolidated"] },
+          "backup_path": { "type": "string" }
+        },
+        "required": ["artifact_id", "reason", "action"]
+      }
+    },
+    "artifacts_updated": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "artifact_id": { "type": "string" },
+          "name": { "type": "string" },
+          "previous_relevance": { "type": "number" },
+          "new_relevance": { "type": "number" },
+          "reinforced": { "type": "boolean" }
+        },
+        "required": ["artifact_id", "new_relevance"]
+      }
+    },
+    "duplicates_found": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "type": "string" } },
+          "overlap_percentage": { "type": "number" },
+          "resolution": { "type": "string" }
+        },
+        "required": ["items", "resolution"]
+      }
+    },
+    "bloat_flags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "target": { "type": "string" },
+          "metric": { "type": "string" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" },
+          "recommendation": { "type": "string" }
+        },
+        "required": ["target", "metric", "recommendation"]
+      }
+    }
+  },
+  "required": ["artifacts_evaluated", "artifacts_pruned", "artifacts_updated"]
+}

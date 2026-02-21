@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Sleep agent runtime state (generated per cycle)
+sleep-agent/state/cycles/
+sleep-agent/state/backups/
+sleep-agent/reports/*.md
+
+# Demo results
+demo/results/
+demo/before-output.txt
+demo/after-output.txt
+
+# OS
+.DS_Store
+
+# Environment
+.env

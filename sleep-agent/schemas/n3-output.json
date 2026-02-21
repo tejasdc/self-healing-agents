@@ -1,0 +1,73 @@
+{
+  "type": "object",
+  "properties": {
+    "health_checks": {
+      "type": "object",
+      "properties": {
+        "hooks": {
+          "type": "object",
+          "properties": {
+            "total": { "type": "integer" },
+            "healthy": { "type": "integer" },
+            "broken": { "type": "integer" },
+            "details": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "hook_name": { "type": "string" },
+                  "status": { "type": "string", "enum": ["healthy", "broken", "repaired"] },
+                  "issue": { "type": "string" },
+                  "fix_applied": { "type": "string" }
+                },
+                "required": ["hook_name", "status"]
+              }
+            }
+          },
+          "required": ["total", "healthy", "broken"]
+        },
+        "skills": {
+          "type": "object",
+          "properties": {
+            "total": { "type": "integer" },
+            "healthy": { "type": "integer" },
+            "broken": { "type": "integer" }
+          },
+          "required": ["total", "healthy", "broken"]
+        },
+        "memory": {
+          "type": "object",
+          "properties": {
+            "total_entries": { "type": "integer" },
+            "stale_references": { "type": "integer" },
+            "entries_updated": { "type": "integer" }
+          },
+          "required": ["total_entries", "stale_references"]
+        }
+      },
+      "required": ["hooks", "skills", "memory"]
+    },
+    "repairs_made": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "target": { "type": "string" },
+          "issue": { "type": "string" },
+          "fix": { "type": "string" },
+          "verified": { "type": "boolean" }
+        },
+        "required": ["target", "issue", "fix"]
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "properties": {
+        "temp_files_removed": { "type": "integer" },
+        "stale_sessions_cleaned": { "type": "integer" },
+        "bytes_freed": { "type": "integer" }
+      }
+    }
+  },
+  "required": ["health_checks", "repairs_made"]
+}
