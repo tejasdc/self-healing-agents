@@ -1,0 +1,7 @@
+services:
+  - type: web
+    runtime: static
+    name: do-agents-dream
+    buildCommand: echo 'static site'
+    staticPublishPath: ./presentation
+    branch: main
