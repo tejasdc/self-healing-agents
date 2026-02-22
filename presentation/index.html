@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Do Agents Dream of Cleaner Code?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --night-deep: #0a0e27;
+  --night-mid: #141b3d;
+  --night-soft: #1e2952;
+  --moon-gold: #f5d680;
+  --moon-warm: #e8c367;
+  --star-white: #f0eadb;
+  --cloud-pale: #ddd5f0;
+  --text-cream: #f5f0e8;
+  --text-dim: #9a94b8;
+  --lavender: #b8a9d4;
+  --sleep-n1: #7eb8c9;
+  --sleep-n2: #5a8fa8;
+  --sleep-n3: #3d6b8e;
+  --sleep-rem: #c97eb8;
+  --wire-silver: #b0b0c8;
+  --page-dark: #111630;
+  --page-dark-back: #0d1028;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: 'Crimson Pro', Georgia, serif;
+  background: var(--night-deep);
+  color: var(--text-cream);
+}
+
+/* Sky vignette */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 120% 80% at 50% 50%, transparent 40%, rgba(5, 5, 20, 0.6) 100%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Stars */
+.stars-container { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+.star {
+  position: absolute;
+  width: 2px; height: 2px;
+  background: var(--star-white);
+  border-radius: 50%;
+  animation: twinkle var(--dur, 3s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  opacity: 0.3;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.5); }
+}
+
+/* Shooting stars */
+.shooting-star {
+  position: fixed; width: 80px; height: 1px;
+  background: linear-gradient(90deg, var(--star-white), transparent);
+  z-index: 1; opacity: 0; transform: rotate(-35deg);
+  animation: shoot var(--shoot-dur, 8s) linear infinite;
+  animation-delay: var(--shoot-delay, 0s);
+}
+@keyframes shoot {
+  0%, 90%, 100% { opacity: 0; transform: rotate(-35deg) translateX(0); }
+  92% { opacity: 1; } 96% { opacity: 1; }
+  98% { opacity: 0; transform: rotate(-35deg) translateX(300px); }
+}
+
+/* Moon */
+.moon {
+  position: fixed; top: 40px; right: 60px;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle at 35% 35%, var(--moon-gold), var(--moon-warm));
+  border-radius: 50%;
+  box-shadow: 0 0 60px rgba(245, 214, 128, 0.25), 0 0 120px rgba(245, 214, 128, 0.1);
+  z-index: 1;
+}
+/* Crescent shadow - dark circle overlapping to create crescent shape */
+.moon::after {
+  content: ''; position: absolute; top: -8px; left: 18px;
+  width: 70px; height: 70px;
+  background: var(--night-deep);
+  border-radius: 50%;
+  box-shadow: 0 0 10px 4px rgba(10, 14, 39, 0.8);
+}
+
+/* Clouds */
+.cloud { position: fixed; z-index: 1; opacity: 0.04; animation: drift var(--drift-dur, 40s) linear infinite; }
+.cloud-shape { background: var(--cloud-pale); border-radius: 100px; position: relative; }
+.cloud-shape::before, .cloud-shape::after { content: ''; position: absolute; background: var(--cloud-pale); border-radius: 50%; }
+.cloud-1 .cloud-shape { width: 200px; height: 50px; }
+.cloud-1 .cloud-shape::before { width: 80px; height: 80px; top: -40px; left: 30px; }
+.cloud-1 .cloud-shape::after { width: 60px; height: 60px; top: -25px; left: 100px; }
+.cloud-1 { top: 15%; left: -200px; --drift-dur: 60s; }
+.cloud-2 .cloud-shape { width: 160px; height: 40px; }
+.cloud-2 .cloud-shape::before { width: 60px; height: 60px; top: -30px; left: 25px; }
+.cloud-2 .cloud-shape::after { width: 50px; height: 50px; top: -20px; left: 80px; }
+.cloud-2 { top: 35%; left: -160px; --drift-dur: 75s; animation-delay: -20s; }
+.cloud-3 .cloud-shape { width: 240px; height: 55px; }
+.cloud-3 .cloud-shape::before { width: 90px; height: 90px; top: -45px; left: 40px; }
+.cloud-3 .cloud-shape::after { width: 70px; height: 70px; top: -30px; left: 130px; }
+.cloud-3 { top: 65%; left: -240px; --drift-dur: 90s; animation-delay: -40s; }
+@keyframes drift { from { transform: translateX(0); } to { transform: translateX(calc(100vw + 300px)); } }
+
+/* ═══════════════════════════════════════════
+   BOOK STRUCTURE
+   ═══════════════════════════════════════════ */
+
+.book-scene {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+  perspective: 2000px;
+}
+
+.book {
+  position: relative;
+  width: min(1000px, 90vw);
+  aspect-ratio: 16 / 9;
+  transform-style: preserve-3d;
+}
+
+/* Page stack shadow (visible pages underneath) */
+.book::after {
+  content: '';
+  position: absolute;
+  top: 4px; left: 4px; right: -4px; bottom: -4px;
+  background: var(--page-dark);
+  border-radius: 16px;
+  box-shadow:
+    2px 2px 0 0 #0f1330,
+    4px 4px 0 0 #0d1028,
+    8px 8px 24px rgba(0,0,0,0.5);
+  z-index: -1;
+}
+
+/* Spiral binding and spine removed for cleaner look */
+
+/* ═══ PAGES ═══ */
+.page {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1.0);
+  cursor: pointer;
+}
+
+.page .front,
+.page .back {
+  position: absolute; inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  padding: 36px 56px 24px;
+}
+
+.page .front {
+  background: linear-gradient(160deg, #141b3d, #101632);
+  border: 1px solid rgba(184, 169, 212, 0.08);
+  z-index: 1;
+  /* Hide front content at 90-degree midpoint (0.5s into 1s flip) */
+  transition: visibility 0s 0.5s;
+}
+
+.page.flipped .front {
+  visibility: hidden;
+}
+
+/* Subtle inner glow on front face */
+.page .front::after {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: 16px;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.15);
+  pointer-events: none;
+}
+
+.page .back {
+  background: #0e1230;
+  transform: rotateY(180deg);
+  border: 1px solid rgba(100, 90, 140, 0.06);
+}
+
+/* Flipped state */
+.page.flipped {
+  transform: rotateY(-180deg);
+}
+
+/* Dynamic shadow during flip - applied via JS */
+.page.flipping {
+  filter: drop-shadow(-8px 0 12px rgba(0,0,0,0.4));
+}
+
+/* Page z-index stacking (page 0 on top, using data-page attr to avoid nth-child offset issues) */
+.page[data-page="0"]  { z-index: 12; }
+.page[data-page="1"]  { z-index: 11; }
+.page[data-page="2"]  { z-index: 10; }
+.page[data-page="3"]  { z-index: 9; }
+.page[data-page="4"]  { z-index: 8; }
+.page[data-page="5"]  { z-index: 7; }
+.page[data-page="6"]  { z-index: 6; }
+.page[data-page="7"]  { z-index: 5; }
+.page[data-page="8"]  { z-index: 4; }
+.page[data-page="9"]  { z-index: 3; }
+.page[data-page="10"] { z-index: 2; }
+.page[data-page="11"] { z-index: 1; }
+
+/* ═══════════════════════════════════════════
+   CONTENT STYLES
+   ═══════════════════════════════════════════ */
+
+.page-number {
+  position: absolute; bottom: 20px; right: 28px;
+  font-family: 'Caveat', cursive; font-size: 1rem;
+  color: var(--text-dim); opacity: 0.4;
+}
+
+.page-chapter {
+  font-family: 'Caveat', cursive; font-size: 0.95rem;
+  color: var(--moon-gold); text-transform: uppercase;
+  letter-spacing: 0.15em; margin-bottom: 6px; opacity: 0.8;
+}
+
+.page-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 700; color: var(--text-cream);
+  margin-bottom: 20px; line-height: 1.2;
+}
+
+.page-heading em { color: var(--moon-gold); font-style: italic; }
+
+.page-body {
+  font-size: clamp(0.9rem, 1.3vw, 1.05rem);
+  line-height: 1.75; color: var(--text-cream); opacity: 0.85;
+  max-width: 100%; flex: 1;
+}
+
+.page-body p { margin-bottom: 12px; }
+.page-body p:last-child { margin-bottom: 0; }
+.page-body strong { color: var(--moon-gold); font-weight: 600; }
+
+/* Lists */
+.page-body ul { list-style: none; padding: 0; }
+.page-body ul li { padding-left: 20px; position: relative; margin-bottom: 6px; }
+.page-body ul li::before {
+  content: ''; position: absolute; left: 4px; top: 9px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--moon-gold); opacity: 0.6;
+}
+
+/* Quote block */
+.quote-block {
+  border-left: 3px solid var(--moon-gold);
+  padding: 12px 20px; margin: 12px 0;
+  background: rgba(245, 214, 128, 0.05);
+  border-radius: 0 10px 10px 0;
+}
+.quote-block p {
+  font-family: 'Playfair Display', serif;
+  font-style: italic; font-size: 1.05rem;
+  color: var(--moon-gold); opacity: 0.9;
+}
+
+/* Sleep stage cards */
+.stage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; margin-top: 14px; }
+.stage-card {
+  padding: 18px; border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.stage-card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,0.3); }
+.stage-card--n1 { background: rgba(126, 184, 201, 0.1); border-color: rgba(126, 184, 201, 0.2); }
+.stage-card--n2 { background: rgba(90, 143, 168, 0.1); border-color: rgba(90, 143, 168, 0.2); }
+.stage-card--n3 { background: rgba(61, 107, 142, 0.1); border-color: rgba(61, 107, 142, 0.2); }
+.stage-card--rem { background: rgba(201, 126, 184, 0.1); border-color: rgba(201, 126, 184, 0.2); }
+.stage-label { font-family: 'Caveat', cursive; font-size: 1rem; margin-bottom: 4px; font-weight: 700; }
+.stage-card--n1 .stage-label { color: var(--sleep-n1); }
+.stage-card--n2 .stage-label { color: var(--sleep-n2); }
+.stage-card--n3 .stage-label { color: var(--sleep-n3); }
+.stage-card--rem .stage-label { color: var(--sleep-rem); }
+.stage-title { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; color: var(--text-cream); margin-bottom: 6px; }
+.stage-desc { font-size: 0.85rem; color: var(--text-dim); line-height: 1.4; }
+
+/* Metric row */
+.metric-row { display: flex; gap: 28px; margin: 18px 0; flex-wrap: wrap; }
+.metric { text-align: center; }
+.metric-value { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 900; color: var(--moon-gold); line-height: 1; }
+.metric-label { font-family: 'Caveat', cursive; font-size: 0.95rem; color: var(--text-dim); margin-top: 4px; }
+
+/* Flow badges */
+.flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
+.flow-step { padding: 8px 16px; border-radius: 10px; font-family: 'Crimson Pro', serif; font-size: 0.9rem; font-weight: 600; }
+.flow-step--n1 { background: rgba(126, 184, 201, 0.2); color: var(--sleep-n1); }
+.flow-step--n2 { background: rgba(90, 143, 168, 0.2); color: var(--sleep-n2); }
+.flow-step--n3 { background: rgba(61, 107, 142, 0.2); color: var(--sleep-n3); }
+.flow-step--rem { background: rgba(201, 126, 184, 0.2); color: var(--sleep-rem); }
+.flow-arrow { color: var(--text-dim); font-size: 1.1rem; opacity: 0.5; }
+
+/* Sponsor badges */
+.sponsor-row { display: flex; gap: 14px; margin: 14px 0; flex-wrap: wrap; }
+.sponsor-badge {
+  padding: 10px 18px; border-radius: 10px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+  font-family: 'Crimson Pro', serif; font-size: 0.85rem;
+}
+.sponsor-badge strong { color: var(--moon-gold); }
+
+/* Title page */
+.page--title .front {
+  align-items: center; justify-content: center; text-align: center;
+  background: linear-gradient(160deg, #0e1430, #0a0e27);
+}
+.title-sub {
+  font-family: 'Caveat', cursive; font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+  color: var(--lavender); font-weight: 400; margin-bottom: 30px;
+}
+.title-main {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 900;
+  line-height: 1.1; color: var(--moon-gold);
+  text-shadow: 0 0 80px rgba(245, 214, 128, 0.3);
+  margin-bottom: 20px; letter-spacing: -0.02em;
+}
+.title-tagline {
+  font-family: 'Crimson Pro', serif; font-size: clamp(0.9rem, 1.5vw, 1.15rem);
+  color: var(--text-dim); font-style: italic; font-weight: 300;
+  max-width: 420px; line-height: 1.6;
+}
+
+/* Closing page */
+.page--closing .front {
+  align-items: center; justify-content: center; text-align: center;
+  background: linear-gradient(160deg, #0e1430, #0a0e27);
+}
+.closing-emoji { font-size: 3rem; margin-bottom: 20px; animation: float 4s ease-in-out infinite; }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.closing-heading {
+  font-family: 'Playfair Display', serif; font-size: clamp(2.2rem, 4.5vw, 3.8rem);
+  font-weight: 900; color: var(--moon-gold); margin-bottom: 14px;
+  text-shadow: 0 0 60px rgba(245, 214, 128, 0.4), 0 0 120px rgba(245, 214, 128, 0.15);
+}
+.closing-sub { font-family: 'Caveat', cursive; font-size: 1.3rem; color: var(--lavender); margin-bottom: 28px; }
+.closing-links { font-size: 1rem; color: var(--text-dim); }
+.closing-links a {
+  color: var(--moon-gold); text-decoration: none;
+  border-bottom: 1px solid rgba(245, 214, 128, 0.3);
+  transition: border-color 0.3s, text-shadow 0.3s;
+}
+.closing-links a:hover { border-color: var(--moon-gold); text-shadow: 0 0 20px rgba(245, 214, 128, 0.4); }
+
+/* ═══ NAVIGATION ═══ */
+.nav {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%); z-index: 100;
+  display: flex; align-items: center; gap: 16px;
+}
+.nav-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(184, 169, 212, 0.2);
+  background: rgba(20, 27, 61, 0.8); color: var(--text-cream);
+  font-size: 1.1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s; backdrop-filter: blur(10px);
+}
+.nav-btn:hover { background: rgba(245, 214, 128, 0.15); border-color: var(--moon-gold); color: var(--moon-gold); }
+.nav-btn:disabled { opacity: 0.2; cursor: default; }
+.nav-dots { display: flex; gap: 7px; }
+.nav-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-dim); opacity: 0.3;
+  transition: all 0.3s; cursor: pointer; border: none;
+}
+.nav-dot.active { background: var(--moon-gold); opacity: 1; transform: scale(1.4); }
+
+/* Progress bar */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 2px;
+  background: linear-gradient(90deg, var(--moon-gold), var(--sleep-rem));
+  z-index: 100; transition: width 0.6s; opacity: 0.4;
+}
+
+/* Stagger animation */
+.page:not(.flipped) .front .stagger > * {
+  opacity: 0; animation: fadeUp 0.4s ease-out forwards;
+}
+.page:not(.flipped) .front .stagger > *:nth-child(1) { animation-delay: 0.15s; }
+.page:not(.flipped) .front .stagger > *:nth-child(2) { animation-delay: 0.25s; }
+.page:not(.flipped) .front .stagger > *:nth-child(3) { animation-delay: 0.35s; }
+.page:not(.flipped) .front .stagger > *:nth-child(4) { animation-delay: 0.45s; }
+.page:not(.flipped) .front .stagger > *:nth-child(5) { animation-delay: 0.55s; }
+.page:not(.flipped) .front .stagger > *:nth-child(6) { animation-delay: 0.65s; }
+.page:not(.flipped) .front .stagger > *:nth-child(7) { animation-delay: 0.75s; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page .front, .page .back { padding: 20px 24px 16px; }
+  .stage-grid { grid-template-columns: 1fr; }
+  .moon { width: 50px; height: 50px; top: 16px; right: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Stars -->
+<div class="stars-container" id="stars"></div>
+
+<!-- Moon -->
+<div class="moon"></div>
+
+<!-- Clouds -->
+<div class="cloud cloud-1"><div class="cloud-shape"></div></div>
+<div class="cloud cloud-2"><div class="cloud-shape"></div></div>
+<div class="cloud cloud-3"><div class="cloud-shape"></div></div>
+
+<!-- Shooting stars -->
+<div class="shooting-star" style="top: 12%; left: 20%; --shoot-dur: 12s; --shoot-delay: 3s;"></div>
+<div class="shooting-star" style="top: 28%; left: 55%; --shoot-dur: 18s; --shoot-delay: 8s;"></div>
+<div class="shooting-star" style="top: 8%; left: 75%; --shoot-dur: 15s; --shoot-delay: 14s;"></div>
+
+<!-- Progress -->
+<div class="progress-bar" id="progress"></div>
+
+<!-- BOOK -->
+<div class="book-scene">
+  <div class="book" id="book">
+
+    <!-- Page 1: Title -->
+    <div class="page page--title" data-page="0">
+      <div class="front">
+        <div class="stagger">
+          <div class="title-sub">A bedtime story about self-healing agents</div>
+          <h1 class="title-main">Do Agents Dream<br>of Cleaner Code?</h1>
+          <p class="title-tagline">Sleep Like A Baby &mdash; while your agents heal themselves overnight, waking up smarter, leaner, and ready to work.</p>
+        </div>
+        <div class="page-number">1</div>
+      </div>
+      <div class="back"></div>
+    </div>
+
+    <!-- Page 2: The Problem -->
+    <div class="page" data-page="1">
+      <div class="front">
+        <div class="stagger">
+          <div class="page-chapter">Chapter One</div>
+          <h2 class="page-heading">Your agents <em>never</em> sleep</h2>
+          <div class="page-body">
+            <p>Every day, Claude Code accumulates a little more entropy. Stale memory entries. Unused hooks. Bloated CLAUDE.md files. Repeated frustrations that never get addressed.</p>
+            <p>Today, this <strong>configuration rot</strong> is your problem. You're the one who notices the agent keeps making the same mistake. You're the one who cleans up.</p>
+            <div class="quote-block">
+              <p>"Token anxiety" &mdash; the nagging feeling that your agent is burning tokens on things it should already know.</p>
+            </div>
+            <p>But in biology, every organism has a solution to entropy. It's called <strong>sleep</strong>.</p>
+          </div>
+        </div>
+        <div class="page-number">2</div>
+      </div>
+      <div class="back"></div>
+    </div>
+
+    <!-- Page 3: Why Sleep -->
+    <div class="page" data-page="2">
+      <div class="front">
+        <div class="stagger">
+          <div class="page-chapter">Chapter Two</div>
+          <h2 class="page-heading">Sleep isn't rest. It's <em>healing.</em></h2>
+          <div class="page-body">
+            <p>During sleep, your brain runs the most sophisticated maintenance cycle in nature:</p>
+            <ul>
+              <li><strong>Memory consolidation</strong> &mdash; hippocampal replay strengthens important patterns</li>
+              <li><strong>Synaptic pruning</strong> &mdash; unused connections are weakened and removed</li>
+              <li><strong>Waste clearance</strong> &mdash; the glymphatic system activates 10x to clear metabolic debris</li>
+              <li><strong>Creative dreaming</strong> &mdash; REM sleep recombines ideas into novel solutions</li>
+            </ul>
+            <p>Sleep is the price the brain pays for <strong>plasticity</strong>. Without it, the system degrades. With it, the system compounds.</p>
+          </div>
+        </div>
+        <div class="page-number">3</div>
+      </div>
+      <div class="back"></div>
+    </div>
+
+    <!-- Page 4: The Four Stages -->
+    <div class="page" data-page="3">
+      <div class="front">
+        <div class="stagger">
+          <div class="page-chapter">Chapter Three</div>
+          <h2 class="page-heading">Four stages of <em>agent sleep</em></h2>
+          <div class="stage-grid">
+            <div class="stage-card stage-card--n1">
+              <div class="stage-label">N1 &middot; Light Sleep</div>
+              <div class="stage-title">Measure</div>
+              <div class="stage-desc">Scan Braintrust metrics. Detect frustration clusters, token anomalies, repeated commands.</div>
+            </div>
+            <div class="stage-card stage-card--n2">
+              <div class="stage-label">N2 &middot; Medium Sleep</div>
+              <div class="stage-title">Prune</div>
+              <div class="stage-desc">Trail evaporation. Decay unused artifacts. Remove dead weight. Synaptic downscaling.</div>
+            </div>
+            <div class="stage-card stage-card--n3">
+              <div class="stage-label">N3 &middot; Deep Sleep</div>
+              <div class="stage-title">Repair</div>
+              <div class="stage-desc">Health-check hooks, skills, memory. Fix broken references. Glymphatic waste clearance.</div>
+            </div>
+            <div class="stage-card stage-card--rem">
+              <div class="stage-label">REM &middot; Dream</div>
+              <div class="stage-title">Create</div>
+              <div class="stage-desc">Two-signal activation. Synthesize new hooks, skills, memory from confirmed patterns.</div>
+            </div>
+          </div>
+        </div>
+        <div class="page-number">4</div>
+      </div>
+      <div class="back"></div>
+    </div>
+
+    <!-- Page 5: Two-Signal Activation -->
+    <div class="page" data-page="4">
+      <div class="front">
+        <div class="stagger">
+          <div class="page-chapter">Chapter Four</div>
+          <h2 class="page-heading">The immune system's <em>wisdom</em></h2>
+          <div class="page-body">
+            <p>Your immune system never attacks on a single signal. It requires <strong>co-stimulation</strong> &mdash; two independent signals confirming the threat before deploying a response.</p>
+            <p>Our sleep agent follows the same principle:</p>
+            <ul>
+              <li><strong>First sighting</strong> &mdash; a pattern appears in one sleep cycle. Noted. Deferred.</li>
+              <li><strong>Second sighting</strong> &mdash; the same pattern appears again. Confirmed. Act on it.</li>
+            </ul>
+            <p>This prevents <strong>hallucinated improvements</strong> from single-session noise.</p>
+            <div class="quote-block">
+              <p>Two signals = 0.65 confidence. Three+ signals = 0.85. Cross-session + cross-pattern = 0.95.</p>
+            </div>
+          </div>
+        </div>
+        <div class="page-number">5</div>
+      </div>
+      <div class="back"></div>
+    </div>
+
+    <!-- Page 6: Trail Evaporation -->
+    <div class="page" data-page="5">
+      <div class="front">
+        <div class="stagger">
+          <div class="page-chapter">Chapter Five</div>
+          <h2 class="page-heading">Trails that <em>fade</em></h2>
+          <div class="page-body">
+            <p>Ant colonies coordinate through <strong>pheromone trails</strong>. Popular paths get reinforced. Abandoned paths evaporate. No central coordinator needed.</p>
+            <p>Every artifact in our system has a <strong>relevance score</strong> that decays each cycle:</p>
+            <div class="quote-block"><p>relevance = 0.9 &times; previous + reinforcement</p></div>
+            <p>Used artifacts get reinforced (+1.0). Unused artifacts fade. Below 0.2? <strong>Pruned.</strong></p>
+            <p>This mirrors Tononi's synaptic homeostasis hypothesis: sleep exists to downscale synaptic strength, keeping only what matters.</p>
+          </div>
+        </div>
+        <div class="page-number">6</div>
+      </div>
+      <div class="back"></div>
+    </div>
+
+    <!-- Page 7: How It Works -->
+    <div class="page" data-page="6">
+      <div class="front">
+        <div class="stagger">
+          <div class="page-chapter">Chapter Six</div>
+          <h2 class="page-heading">How it <em>works</em></h2>
+          <div class="page-body">
+            <p><strong>Daytime</strong> &mdash; Braintrust CC plugin captures every session automatically. Online scorers analyze each trace in real-time.</p>
+            <p><strong>Nighttime</strong> &mdash; The sleep cycle runs:</p>
+          </div>
+          <div class="flow">
+            <div class="flow-step flow-step--n1">N1 Haiku</div>
+            <span class="flow-arrow">&rarr;</span>
+            <div class="flow-step flow-step--n2">N2 Sonnet</div>
+            <span class="flow-arrow">&rarr;</span>
+            <div class="flow-step flow-step--n3">N3 Sonnet</div>
+            <span class="flow-arrow">&rarr;</span>
+            <div class="flow-step flow-step--rem">REM Opus</div>
+          </div>
+          <div class="page-body">
+            <p>Each stage gets <strong>escalating capability</strong>. Haiku does cheap measurement. Sonnet does focused repair. Opus does creative synthesis.</p>
+            <p>Structured JSON output at every stage. Least-privilege tool access. Full traceability in Braintrust.</p>
+          </div>
+        </div>
+        <div class="page-number">7</div>
+      </div>
+      <div class="back"></div>
+    </div>
+
+    <!-- Page 8: The Proof -->
+    <div class="page" data-page="7">
+      <div class="front">
+        <div class="stagger">
+          <div class="page-chapter">Chapter Seven</div>
+          <h2 class="page-heading">The <em>proof</em></h2>
+          <div class="page-body"><p>Same task. Before sleep and after. Measured in Braintrust.</p></div>
+          <div class="metric-row">
+            <div class="metric">
+              <div class="metric-value">150k</div>
+              <div class="metric-label">tokens before</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--sleep-n1);">60k</div>
+              <div class="metric-label">tokens after</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value">60%</div>
+              <div class="metric-label">reduction</div>
+            </div>
+          </div>
+          <div class="page-body">
+            <p>The sleep agent created targeted memory entries, pruned stale context, and added rules that eliminated redundant tool calls. The agent woke up <strong>knowing things it had to rediscover before.</strong></p>
+          </div>
+        </div>
+        <div class="page-number">8</div>
+      </div>
+      <div class="back"></div>
+    </div>
+
+    <!-- Page 9: What We Built -->
+    <div class="page" data-page="8">
+      <div class="front">
+        <div class="stagger">
+          <div class="page-chapter">Chapter Eight</div>
+          <h2 class="page-heading">What we <em>built</em></h2>
+          <div class="page-body">
+            <p>Built in one hackathon day, using Claude Code itself.</p>
+            <ul>
+              <li><strong>sleep.sh</strong> &mdash; orchestrator chaining claude -p with JSON schemas</li>
+              <li><strong>4 stage prompts</strong> &mdash; escalating model tiers and tool permissions</li>
+              <li><strong>query_braintrust.py</strong> &mdash; BTQL bridge between plugin and sleep agent</li>
+              <li><strong>upload_to_braintrust.py</strong> &mdash; 7 sessions, 23MB, 1,024 spans uploaded</li>
+              <li><strong>3 online scorers</strong> &mdash; FrustrationDetector, TokenEfficiency, ToolUsageSummary</li>
+              <li><strong>15,000+ lines</strong> of research across 300+ sources</li>
+            </ul>
+          </div>
+          <div class="sponsor-row">
+            <div class="sponsor-badge"><strong>Braintrust</strong> &mdash; traces, scoring, BTQL</div>
+            <div class="sponsor-badge"><strong>Gemini 2.5 Flash</strong> &mdash; frustration judge</div>
+            <div class="sponsor-badge"><strong>Claude Code</strong> &mdash; substrate + builder</div>
+          </div>
+        </div>
+        <div class="page-number">9</div>
+      </div>
+      <div class="back"></div>
+    </div>
+
+    <!-- Page 10: Research Foundation -->
+    <div class="page" data-page="9">
+      <div class="front">
+        <div class="stagger">
+          <div class="page-chapter">Chapter Nine</div>
+          <h2 class="page-heading">Grounded in <em>science</em></h2>
+          <div class="page-body">
+            <p>300+ sources across neuroscience, immunology, ecology, and distributed systems:</p>
+            <ul>
+              <li><strong>Tononi's synaptic homeostasis</strong> &rarr; trail evaporation</li>
+              <li><strong>Glymphatic waste clearance</strong> &rarr; orphaned file cleanup</li>
+              <li><strong>Hippocampal replay</strong> &rarr; cross-session aggregation</li>
+              <li><strong>REM dreaming</strong> &rarr; creative artifact synthesis</li>
+              <li><strong>Immune co-stimulation</strong> &rarr; two-signal activation</li>
+              <li><strong>Ant colony stigmergy</strong> &rarr; environmental traces as coordination</li>
+              <li><strong>Alan Kay's cathedral</strong> &rarr; simple components, powerful arrangement</li>
+            </ul>
+            <div class="quote-block"><p>The bridge isn't in any of the stones. It's in the leaning.</p></div>
+          </div>
+        </div>
+        <div class="page-number">10</div>
+      </div>
+      <div class="back"></div>
+    </div>
+
+    <!-- Page 11: What's Next -->
+    <div class="page" data-page="10">
+      <div class="front">
+        <div class="stagger">
+          <div class="page-chapter">Chapter Ten</div>
+          <h2 class="page-heading">What's <em>next</em></h2>
+          <div class="page-body">
+            <ul>
+              <li><strong>Scheduled execution</strong> &mdash; launchd triggers when idle for 30+ minutes. True healing while you sleep.</li>
+              <li><strong>Multi-project learning</strong> &mdash; same correction across 3 repos? Strong signal.</li>
+              <li><strong>Continuous cycles</strong> &mdash; repeat N1&rarr;REM like real sleep (4-5 cycles per night) with diminishing returns detection.</li>
+              <li><strong>Community patterns</strong> &mdash; 1,000 developers frustrated by the same thing? Anthropic should know.</li>
+              <li><strong>Voice briefing</strong> &mdash; "Good morning. While you slept, I pruned 3 stale memories and created a new skill. Token usage should drop 40%."</li>
+            </ul>
+          </div>
+        </div>
+        <div class="page-number">11</div>
+      </div>
+      <div class="back"></div>
+    </div>
+
+    <!-- Page 12: Closing -->
+    <div class="page page--closing" data-page="11">
+      <div class="front">
+        <div class="stagger">
+          <div class="closing-emoji">&#10022;</div>
+          <h2 class="closing-heading">Goodnight</h2>
+          <p class="closing-sub">Your agents are healing. Your agents are growing.</p>
+          <div class="closing-links">
+            <a href="https://github.com/tejasdc/self-healing-agents">github.com/tejasdc/self-healing-agents</a>
+          </div>
+        </div>
+        <div class="page-number">12</div>
+      </div>
+      <div class="back"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="nav">
+  <button class="nav-btn" id="prevBtn" disabled>&larr;</button>
+  <div class="nav-dots" id="navDots"></div>
+  <button class="nav-btn" id="nextBtn">&rarr;</button>
+</nav>
+
+<script>
+// Generate stars
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 150; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  s.style.left = Math.random() * 100 + '%';
+  s.style.top = Math.random() * 100 + '%';
+  s.style.setProperty('--dur', (2 + Math.random() * 4) + 's');
+  s.style.setProperty('--delay', (Math.random() * 5) + 's');
+  s.style.width = s.style.height = (1 + Math.random() * 2) + 'px';
+  starsEl.appendChild(s);
+}
+
+// ═══ PAGE FLIP NAVIGATION ═══
+const pages = document.querySelectorAll('.page');
+const totalPages = pages.length;
+let currentPage = 0; // index of the topmost un-flipped page (visible page)
+
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const dotsContainer = document.getElementById('navDots');
+const progressBar = document.getElementById('progress');
+
+// Create dots
+for (let i = 0; i < totalPages; i++) {
+  const dot = document.createElement('button');
+  dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+  dot.addEventListener('click', () => jumpTo(i));
+  dotsContainer.appendChild(dot);
+}
+
+function flipForward() {
+  if (currentPage >= totalPages - 1) return;
+
+  const page = pages[currentPage];
+
+  // Add flipping shadow
+  page.classList.add('flipping');
+
+  // Flip the page to the left
+  page.classList.add('flipped');
+
+  // Re-stack: flipped pages need high z-index to layer correctly on left
+  page.style.zIndex = 100 + currentPage;
+
+  currentPage++;
+  updateNav();
+
+  // Animate metrics on proof slide
+  if (currentPage === 7) animateMetrics();
+
+  // Remove shadow class after animation
+  setTimeout(() => { page.classList.remove('flipping'); }, 1000);
+}
+
+function flipBackward() {
+  if (currentPage <= 0) return;
+
+  currentPage--;
+  const page = pages[currentPage];
+
+  page.classList.add('flipping');
+
+  // Unflip the page
+  page.classList.remove('flipped');
+
+  // Restore original z-index
+  page.style.zIndex = totalPages - currentPage;
+
+  updateNav();
+
+  setTimeout(() => { page.classList.remove('flipping'); }, 1000);
+}
+
+function jumpTo(target) {
+  if (target === currentPage) return;
+  // Flip pages one at a time with slight stagger for multi-page jumps
+  if (target > currentPage) {
+    const steps = target - currentPage;
+    for (let i = 0; i < steps; i++) {
+      setTimeout(() => flipForward(), i * 150);
+    }
+  } else {
+    const steps = currentPage - target;
+    for (let i = 0; i < steps; i++) {
+      setTimeout(() => flipBackward(), i * 150);
+    }
+  }
+}
+
+function updateNav() {
+  prevBtn.disabled = currentPage === 0;
+  nextBtn.disabled = currentPage === totalPages - 1;
+  progressBar.style.width = ((currentPage / (totalPages - 1)) * 100) + '%';
+  dotsContainer.querySelectorAll('.nav-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i === currentPage);
+  });
+}
+
+// Counter animation for metrics
+function animateMetrics() {
+  const metrics = [
+    { el: document.querySelector('[data-page="7"] .metric:nth-child(1) .metric-value'), target: 150, suffix: 'k' },
+    { el: document.querySelector('[data-page="7"] .metric:nth-child(2) .metric-value'), target: 60, suffix: 'k' },
+    { el: document.querySelector('[data-page="7"] .metric:nth-child(3) .metric-value'), target: 60, suffix: '%' },
+  ];
+  metrics.forEach(({ el, target, suffix }, i) => {
+    if (!el) return;
+    el.textContent = '0' + suffix;
+    setTimeout(() => {
+      const startTime = performance.now();
+      function step(now) {
+        const progress = Math.min((now - startTime) / 1200, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(eased * target) + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }, i * 200 + 400);
+  });
+}
+
+// Event listeners
+prevBtn.addEventListener('click', flipBackward);
+nextBtn.addEventListener('click', flipForward);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); flipForward(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); flipBackward(); }
+});
+
+// Touch swipe
+let touchStartX = 0;
+document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+document.addEventListener('touchend', (e) => {
+  const diff = touchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) { diff > 0 ? flipForward() : flipBackward(); }
+});
+
+updateNav();
+</script>
+</body>
+</html>
