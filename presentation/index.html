@@ -435,7 +435,6 @@ body::after {
   .moon { width: 40px; height: 40px; top: 12px; right: 12px; }
   .moon::after { width: 35px; height: 35px; top: -4px; left: 10px; }
   .nav { display: none; }
-  .swipe-hint { display: flex; }
 }
 
 /* Swipe hint — mobile only */
@@ -463,6 +462,9 @@ body::after {
 @keyframes swipeSlide {
   0%, 100% { transform: translateX(0); opacity: 0.4; }
   50% { transform: translateX(-8px); opacity: 1; }
+}
+@media (max-width: 768px) {
+  .swipe-hint { display: flex; }
 }
 </style>
 </head>
