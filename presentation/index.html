@@ -411,23 +411,26 @@ body::after {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Responsive */
+/* Mobile — portrait: tall cards that fit content without scrolling */
 @media (max-width: 768px) {
   .book {
     width: 92vw;
-    aspect-ratio: 3 / 4;  /* Portrait ratio for mobile */
+    aspect-ratio: 9 / 16;  /* Tall portrait cards */
   }
   .page .front, .page .back {
-    padding: 20px 24px 16px;
-    overflow-y: auto;  /* Allow scrolling if content overflows */
+    padding: 24px 20px 16px;
   }
-  .title-main { font-size: clamp(2rem, 8vw, 3rem); }
-  .page-heading { font-size: clamp(1.4rem, 5vw, 2rem); }
-  .page-body { font-size: 0.95rem; line-height: 1.6; }
-  .stage-grid { grid-template-columns: 1fr; }
-  .moon { width: 50px; height: 50px; top: 16px; right: 16px; }
-  .moon::after { width: 45px; height: 45px; top: -5px; left: 12px; }
-  .nav-container { gap: 8px; margin-top: 16px; }
+  .title-main { font-size: clamp(1.8rem, 7vw, 2.8rem); }
+  .page-heading { font-size: clamp(1.3rem, 5vw, 1.8rem); }
+  .page-body { font-size: 0.88rem; line-height: 1.55; }
+  .page-body p { margin-bottom: 8px; }
+  .page-chapter { font-size: 0.85rem; margin-bottom: 8px; }
+  .quote-block { padding: 10px 14px; margin: 8px 0; font-size: 0.85rem; }
+  .stage-grid { grid-template-columns: 1fr; gap: 8px; }
+  .stage-card { padding: 10px 12px; }
+  .moon { width: 40px; height: 40px; top: 12px; right: 12px; }
+  .moon::after { width: 35px; height: 35px; top: -4px; left: 10px; }
+  .nav-container { gap: 8px; margin-top: 12px; }
   .nav-dot { width: 8px; height: 8px; }
 }
 </style>
