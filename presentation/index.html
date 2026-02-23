@@ -435,6 +435,34 @@ body::after {
   .moon { width: 40px; height: 40px; top: 12px; right: 12px; }
   .moon::after { width: 35px; height: 35px; top: -4px; left: 10px; }
   .nav { display: none; }
+  .swipe-hint { display: flex; }
+}
+
+/* Swipe hint — mobile only */
+.swipe-hint {
+  display: none;
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.85rem;
+  z-index: 50;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+.swipe-hint.hidden { opacity: 0; }
+.swipe-hint-arrow {
+  display: inline-block;
+  animation: swipeSlide 1.5s ease-in-out infinite;
+}
+@keyframes swipeSlide {
+  0%, 100% { transform: translateX(0); opacity: 0.4; }
+  50% { transform: translateX(-8px); opacity: 1; }
 }
 </style>
 </head>
@@ -747,6 +775,11 @@ body::after {
   </div>
 </div>
 
+<!-- Swipe hint (mobile) -->
+<div class="swipe-hint" id="swipeHint">
+  <span class="swipe-hint-arrow">&larr;</span> swipe to turn pages
+</div>
+
 <!-- Navigation -->
 <nav class="nav">
   <button class="nav-btn" id="prevBtn" disabled>&larr;</button>
@@ -887,11 +920,16 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Touch swipe
+const swipeHint = document.getElementById('swipeHint');
 let touchStartX = 0;
+function dismissSwipeHint() {
+  if (swipeHint) swipeHint.classList.add('hidden');
+}
+setTimeout(dismissSwipeHint, 4000);
 document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
 document.addEventListener('touchend', (e) => {
   const diff = touchStartX - e.changedTouches[0].clientX;
-  if (Math.abs(diff) > 50) { diff > 0 ? flipForward() : flipBackward(); }
+  if (Math.abs(diff) > 50) { dismissSwipeHint(); diff > 0 ? flipForward() : flipBackward(); }
 });
 
 updateNav();
