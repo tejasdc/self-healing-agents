@@ -21,7 +21,12 @@ demo/after-output.txt
 .env.local
 .env*.local
 
+# Cloudflare
+.wrangler/
+
+# Agent review artifacts
+tmp/reviews/
+
 # Node
 node_modules/
 dist/
-

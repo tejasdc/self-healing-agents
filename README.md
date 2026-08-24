@@ -1,172 +1,162 @@
-# Sleep Like A Baby
+# Do Agents Dream of Electric Sleep?
 
-Bio-inspired self-healing maintenance for Claude Code's `.claude/` folder. Built for the [Continual Learning Hackathon](https://lu.ma/continual-learning) (Feb 21, 2026).
+A bio-inspired maintenance cycle for Claude Code's accumulated `.claude/` configuration.
 
-**The idea:** Every biological organism heals while it sleeps — consolidating memory, pruning unused synapses, clearing waste, dreaming up new connections. What if AI agents did the same thing?
+[**Open the interactive nighttime storybook →**](https://do-agents-dream.pages.dev/)
 
-**The proof:** Run the same task before and after a sleep cycle. Measure the token reduction in Braintrust.
+> [!WARNING]
+> This is a research prototype that edits real Claude Code configuration.
+> Read [Run a cycle](#run-a-cycle) and [Safety](#safety) before using it.
 
-## How It Works
+## The premise
 
+Long-running agents accumulate environmental entropy. Instructions become stale. Hooks break.
+Memory grows noisy. Useful workflows remain buried in yesterday's transcripts.
+
+Biological sleep solves a similar maintenance problem through distinct stages. Brains detect
+patterns, downscale weak connections, clear waste, repair damage, and recombine memories.
+
+This project applies that sequence to Claude Code. It does not retrain the model.
+It improves the configuration the model wakes up with: rules, hooks, skills, and memory.
+
+## One sleep cycle
+
+Daytime Claude Code sessions provide evidence. Braintrust traces supply token usage, tool calls,
+and frustration scores. Local JSONL transcripts provide a fallback when Braintrust is unavailable.
+
+```text
+daytime traces and local artifacts
+                │
+                ▼
+N1 MEASURE → N2 PRUNE → N3 REPAIR → REM CREATE
+                │
+                ▼
+     updated .claude/ + morning report
 ```
-DAYTIME (automatic)
-═══════════════════
-User session → Braintrust CC Plugin captures traces → Online scorers run:
-  • FrustrationDetector (Gemini 2.5 Flash as judge)
-  • TokenEfficiency (normalized token score)
-  • ToolUsageSummary (tool invocation counts)
 
-NIGHTTIME (sleep.sh)
-════════════════════
-N1 Light Sleep  → MEASURE  (Haiku)  — scan metrics, detect patterns
-N2 Medium Sleep → PRUNE    (Sonnet) — trail evaporation, remove dead weight
-N3 Deep Sleep   → REPAIR   (Sonnet) — health-check hooks/skills/memory, fix broken refs
-REM Dream       → CREATE   (Opus)   — synthesize new artifacts from confirmed patterns
-```
+| Stage | Biological analogy | Agent action |
+| --- | --- | --- |
+| **N1 · Measure** | Light-sleep pattern detection | Find recurring frustration, repeated commands, errors, token anomalies, and unused artifacts. |
+| **N2 · Prune** | Synaptic downscaling | Decay unused artifacts, consolidate duplicates, and prune low-relevance configuration. |
+| **N3 · Repair** | Waste clearance and tissue repair | Check hooks, skills, memory references, and temporary files. Repair confirmed faults. |
+| **REM · Create** | Memory integration and dreaming | Turn recurring evidence into new rules, hooks, skills, or memory. |
 
-Each stage maps to real sleep neuroscience:
+The stages receive escalating capabilities. N1 is read-only. N2 and N3 can modify files.
+REM can create new artifacts.
 
-| Stage | Biology | Agent Equivalent |
-|-------|---------|-----------------|
-| N1 | Light sleep — pattern detection, sensory gating | Scan Braintrust metrics + local artifacts for frustration clusters, token anomalies, repeated commands |
-| N2 | Medium sleep — synaptic downscaling (Tononi's hypothesis) | Trail evaporation: decay unused artifact relevance, prune when below threshold |
-| N3 | Deep sleep — glymphatic waste clearance, tissue repair | Health-check hooks, fix broken references, clean orphaned temp files |
-| REM | Dreaming — creative recombination, memory integration | Two-signal activation: create new hooks/skills/memory from confirmed patterns |
+Two mechanisms keep the cycle from overreacting:
 
-## Voice-Driven Sleep Report Dashboard
+- **Two-signal activation:** REM requires the same pattern across two cycles.
+- **Trail evaporation:** unused artifacts lose relevance by 10% per cycle.
 
-The demo frontend — a Gemini Live voice agent narrates the sleep cycle findings while improvement cards appear one-by-one. The presenter approves or dismisses each improvement by voice or button.
+New artifacts start at `1.0` relevance. Used artifacts receive reinforcement.
+Artifacts become prune candidates below `0.2`, after a three-cycle minimum age.
 
-![Dashboard landing state — summary stats and pending analysis placeholders](docs/screenshots/dashboard-landing.png)
+## What it does to `.claude/`
 
-![Cards revealed — each improvement shows type, confidence, story, and impact](docs/screenshots/dashboard-cards-revealed.png)
+The collector inventories the active Claude Code environment under `~/.claude/`.
 
-![Full report — all improvements reviewed, maintenance actions, token reduction headline](docs/screenshots/dashboard-all-revealed.png)
+| Surface | What the cycle inspects or changes |
+| --- | --- |
+| `settings.json` | Finds hooks, verifies their commands, and repairs broken paths or permissions. |
+| `**/SKILL.md` | Checks skill references and can create a skill from repeated workflows. |
+| `projects/*/memory/*.md` and `MEMORY.md` | Finds stale, duplicated, or missing context. |
+| `**/CLAUDE.md` | Flags bloat and contradictions, then adds evidence-backed rules. |
+| `temp/` | Removes orphaned files older than seven days. |
 
-### How the dashboard works
+The cycle stores decisions under `sleep-agent/state/`. Each run also produces:
 
-1. Connects to Gemini Live (BidiGenerateContent WebSocket) with a system instruction containing the sleep report
-2. Gemini narrates the report conversationally and calls tools to control the UI:
-   - `show_next_finding` — reveals the next improvement card
-   - `approve_improvement(id)` — marks an improvement as approved
-   - `dismiss_improvement(id)` — dismisses an improvement
-3. Manual buttons provide fallback if the voice model doesn't call the tool
-4. After all improvements are reviewed, maintenance actions and the token reduction headline appear
+- structured results in `sleep-agent/state/cycles/<timestamp>/`;
+- backups in `sleep-agent/state/backups/<timestamp>/`;
+- a morning report in `sleep-agent/reports/`.
 
-### Running the dashboard
+## Why this is interesting
+
+Most agent improvement systems change prompts centrally or retrain model weights.
+This project treats the agent's working environment as the adaptive layer.
+
+The adaptive layer stays file-based, inspectable, and designed for rollback.
+Future sessions inherit its changes through Claude Code's existing extension points.
+
+It also measures adoption instead of creation. A generated skill has no value when unused.
+The next cycle checks whether prior artifacts changed actual behavior, then reinforces or prunes them.
+
+## Run a cycle
+
+You need macOS or Linux, Python 3, and an authenticated Claude Code CLI.
+The query helper also needs `requests`.
 
 ```bash
-cd demo/gemini-live-demo
-cp .env.example .env.local  # Add your Gemini API key
-npm install
-npm run dev
+git clone https://github.com/tejasdc/self-healing-agents.git
+cd self-healing-agents
+
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install requests
 ```
 
-## Project Structure
-
-```
-sleep-agent/
-├── sleep.sh                    # Main orchestrator
-├── stages/                     # System prompts per sleep stage
-│   ├── n1-measure.md           # → Haiku (read-only)
-│   ├── n2-prune.md             # → Sonnet (edit)
-│   ├── n3-repair.md            # → Sonnet (edit + bash)
-│   └── rem-create.md           # → Opus (full write)
-├── schemas/                    # JSON output schemas per stage
-├── lib/
-│   ├── query_braintrust.py     # BTQL queries for aggregated metrics
-│   ├── upload_to_braintrust.py # Bulk upload JSONL sessions as traces
-│   ├── collect_artifacts.py    # Snapshot .claude/ artifacts
-│   └── generate_report.py      # Morning sleep report
-├── scorers/
-│   ├── token_efficiency.py     # Braintrust scorer function
-│   ├── tool_usage_summary.py   # Braintrust scorer function
-│   └── frustration_detector.py # LLMClassifier reference (configured in UI)
-├── state/                      # Persistent state across cycles
-│   ├── artifact-registry.json
-│   ├── pending-signals.json
-│   └── cycle-history.json
-└── reports/                    # Generated sleep reports
-
-demo/
-├── seed-entropy.sh             # Pre-populate .claude/ with demo entropy
-├── demo-task.md                # Before/after comparison task
-├── run-demo.sh                 # Full demo flow
-└── gemini-live-demo/           # Voice-driven sleep report frontend
-    ├── src/
-    │   ├── components/
-    │   │   ├── SleepDashboard.tsx   # Main dashboard page
-    │   │   ├── ImprovementCard.tsx  # Improvement card with approve/dismiss
-    │   │   └── GeminiLive.tsx       # Standalone voice demo (original)
-    │   ├── data/
-    │   │   └── sleep-report.ts      # Report data, system instruction, tool defs
-    │   └── services/
-    │       └── live-client.ts       # WebSocket client with tool calling
-    └── package.json
-
-research/                       # 15,000+ lines across 22 files
-docs/                           # Principles, metaphors, toolkit
-hackathon/                      # Strategy + measurement docs
-```
-
-## Key Design Decisions
-
-**Staged model escalation.** Haiku does cheap measurement, Sonnet does focused repair, Opus does creative synthesis. Mirrors how biology allocates energy — you don't send your most expensive immune cells to every paper cut.
-
-**Two-signal activation.** A pattern must appear in two separate sleep cycles before the system creates an artifact from it. Prevents hallucinated improvements from single-session noise. Inspired by the immune system's co-stimulation requirement.
-
-**Trail evaporation.** Every artifact has a relevance score that decays each cycle (`relevance *= 0.9`). Used artifacts get reinforced (`+1.0`). Unused artifacts fade and get pruned below 0.2. Inspired by ant colony pheromone trails and Tononi's synaptic homeostasis.
-
-**Plugin/sleep-agent separation.** The Braintrust CC plugin handles per-trace capture and scoring. The sleep agent handles cross-session aggregation, persistent state, and file system modifications. `query_braintrust.py` is the explicit bridge.
-
-## Quick Start
+Back up your Claude Code configuration before the first run.
 
 ```bash
-# 1. Set Braintrust API key
-export BRAINTRUST_API_KEY="your-key"
+tar -czf claude-config-before-sleep-agent.tgz -C "$HOME" .claude
+```
 
-# 2. Upload existing sessions to Braintrust
-python3 sleep-agent/lib/upload_to_braintrust.py
+Run the cycle from the repository root.
 
-# 3. Push scorer functions
-cd sleep-agent/scorers
-braintrust push token_efficiency.py
-braintrust push tool_usage_summary.py
-
-# 4. Configure FrustrationDetector in Braintrust UI
-#    (LLMClassifier with Gemini 2.5 Flash — see scorers/frustration_detector.py)
-
-# 5. Seed demo entropy and run
-bash demo/seed-entropy.sh
+```bash
 bash sleep-agent/sleep.sh
 ```
 
-## Full Demo
+Without Braintrust credentials, N1 falls back to local transcripts in `~/.claude/projects/`.
+Set these variables when the `self-healing-sleep` Braintrust project already contains traces:
 
 ```bash
-bash demo/run-demo.sh
+export BRAINTRUST_API_KEY="your-key"
+export BRAINTRUST_CC_PROJECT="self-healing-sleep"
+bash sleep-agent/sleep.sh
 ```
 
-This runs: seed entropy → before task → sleep cycle → after task → comparison.
+For new traces, configure Braintrust's current Claude Code tracer first:
 
-## Sponsor Integration
+```bash
+bt login
+bt trace setup claude --project self-healing-sleep
+```
 
-| Sponsor | Role |
-|---------|------|
-| **Braintrust** | Trace capture (CC plugin), online scoring (3 scorers), BTQL aggregation, dashboard visualization |
-| **Google Gemini** | FrustrationDetector uses Gemini 2.5 Flash as scorer model via Braintrust AI proxy |
-| **Anthropic Claude** | The substrate being healed AND the tool used to build the system |
+See the [Braintrust Claude Code marketplace](https://github.com/braintrustdata/braintrust-claude-plugin#trace-claude-code)
+for current tracer prerequisites and setup.
 
-## Research Foundation
+### Safety
 
-This project is grounded in 300+ sources across neuroscience, immunology, ecology, and distributed systems:
+`sleep.sh` launches its write-capable stages with Claude Code permission checks bypassed.
+Run it only from a trusted clone after reviewing the prompts in `sleep-agent/stages/`.
 
-- **Tononi's Synaptic Homeostasis Hypothesis** → trail evaporation / pruning
-- **Glymphatic waste clearance** → orphaned file cleanup / stale reference repair
-- **Hippocampal replay** → cross-session pattern aggregation
-- **REM dreaming** → creative artifact synthesis
-- **Immune two-signal activation** → two-cycle confirmation before artifact creation
-- **Ant colony stigmergy** → environmental traces as coordination mechanism
-- **Alan Kay's cathedral architecture** → simple components, powerful arrangement
+The stage prompts require backups before changes. The orchestrator also backs up its state.
+Neither replaces your own full `.claude/` backup.
 
-See [`SYNTHESIS.md`](SYNTHESIS.md) for the full synthesis of all 22 research files.
+Do not run `demo/seed-entropy.sh` against a valuable profile. It intentionally inserts stale
+memory and temporary files into the active `~/.claude/` directory.
+
+## Measured result
+
+The hackathon demonstration ran the same project-analysis task before and after one cycle.
+Braintrust recorded **150,000 tokens before and 60,000 after: a 60% reduction**.
+
+The sleep cycle created targeted memory, pruned stale context, and removed rediscovery work.
+The measurement sums the captured LLM token counts for each tagged task run.
+
+The repository does not contain the raw Braintrust trace export. Treat this as the recorded
+demonstration result, not an independently reproduced benchmark.
+
+## Explore the project
+
+- [`presentation/index.html`](presentation/index.html) is the interactive nighttime storybook.
+- [`sleep-agent/sleep.sh`](sleep-agent/sleep.sh) orchestrates the four stages.
+- [`sleep-agent/stages/`](sleep-agent/stages/) contains each stage's operating prompt.
+- [`hackathon/measurement-system.md`](hackathon/measurement-system.md) defines the evaluation design.
+- [`SYNTHESIS.md`](SYNTHESIS.md) connects the system to 300+ biological and technical sources.
+- [`demo/gemini-live-demo/`](demo/gemini-live-demo/) contains the voice-driven morning report.
+
+The project began at the February 2026 Continual Learning Hackathon.
+It remains a prototype, but the central idea extends beyond the event:
+agents should maintain the environments that shape their future behavior.

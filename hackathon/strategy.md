@@ -50,7 +50,7 @@ claude plugin install trace-claude-code@braintrust-claude-plugin
   "env": {
     "TRACE_TO_BRAINTRUST": "true",
     "BRAINTRUST_CC_PROJECT": "self-healing-sleep",
-    "BRAINTRUST_API_KEY": "sk-EK0NKr0gqNx3y6vYESwPTbmvenxyYzY3kITqlAyG1sOS0Ke2"
+    "BRAINTRUST_API_KEY": "<braintrust-api-key>"
   }
 }
 ```
